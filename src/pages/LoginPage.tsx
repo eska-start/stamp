@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import { C, SH } from '../lib/design';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -22,95 +23,94 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(160deg, #3730A3 0%, #6D28D9 50%, #7C3AED 100%)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: C.bg }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px 32px' }}>
 
-      {/* 상단 장식 */}
-      <div className="absolute top-0 left-0 right-0 overflow-hidden" style={{ height: 300 }}>
-        <div className="absolute rounded-full opacity-10" style={{ width: 300, height: 300, background: 'white', top: -100, left: -80 }} />
-        <div className="absolute rounded-full opacity-10" style={{ width: 200, height: 200, background: '#F59E0B', top: 40, right: -60 }} />
-        <div className="absolute rounded-full opacity-5" style={{ width: 150, height: 150, background: 'white', top: 180, left: 60 }} />
-      </div>
-
-      {/* 상단 영역 */}
-      <div className="flex-1 flex flex-col items-center justify-center pt-16 pb-8 px-6 relative z-10">
-
-        {/* 마스코트 */}
-        <div className="mb-6 float-anim">
-          <div className="relative">
-            <div className="rounded-3xl flex items-center justify-center shadow-2xl"
-              style={{
-                width: 120, height: 120,
-                background: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)',
-                border: '4px solid rgba(255,255,255,0.4)',
-                fontSize: 68,
-              }}>
-              🦕
-            </div>
-            <div className="absolute -bottom-3 left-1/2 rounded-full px-3 py-1 shadow-lg text-white font-black text-xs"
-              style={{ transform: 'translateX(-50%)', background: 'linear-gradient(90deg, #4F46E5, #7C3AED)', whiteSpace: 'nowrap' }}>
-              STAMP BOOK
-            </div>
-          </div>
+        {/* Mascot */}
+        <div className="float-anim" style={{ marginBottom: 24, textAlign: 'center' }}>
+          <div style={{ fontSize: 96, lineHeight: 1 }}>🦕</div>
         </div>
 
-        {/* 타이틀 */}
-        <h1 className="text-4xl font-black text-white text-center mb-2" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.2)' }}>
-          칭찬 스탬프북 👑
-        </h1>
-        <p className="text-purple-200 text-sm text-center mb-8">매일의 작은 노력이 특별한 추억이 돼요</p>
+        {/* Title */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '.12em', marginBottom: 8 }}>STAMP BOOK</div>
+          <h1 style={{ margin: 0, fontSize: 30, fontWeight: 800, color: C.t1, letterSpacing: '-.02em' }}>칭찬 스탬프북</h1>
+          <p style={{ margin: '8px 0 0', fontSize: 14, color: C.t2, fontWeight: 500, lineHeight: 1.6 }}>
+            매일의 작은 노력들이<br/>특별한 추억이 돼요
+          </p>
+        </div>
 
-        {/* 로그인 카드 */}
-        <div className="w-full rounded-3xl p-6 shadow-2xl" style={{ background: 'white' }}>
-
-          <div className="space-y-3 mb-5">
-            <div className="flex items-center gap-3 rounded-2xl px-4 py-4" style={{ background: '#F5F3FF', border: '2px solid #EDE9FE' }}>
-              <span className="text-xl">👤</span>
+        {/* Card */}
+        <div style={{ width: '100%', background: C.card, borderRadius: 24, padding: 20, boxShadow: SH.lift }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              background: C.soft, borderRadius: 14, padding: '14px 16px',
+              border: `1.5px solid ${C.divider}`,
+            }}>
+              <span style={{ fontSize: 18 }}>👤</span>
               <input
                 type="text"
                 placeholder="아이 이름"
-                className="flex-1 outline-none bg-transparent font-medium"
-                style={{ color: '#1F2937', fontSize: 15 }}
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                style={{
+                  flex: 1, border: 'none', background: 'transparent', outline: 'none',
+                  fontSize: 15, fontWeight: 600, color: C.t1, fontFamily: 'inherit',
+                }}
               />
             </div>
-            <div className="flex items-center gap-3 rounded-2xl px-4 py-4" style={{ background: '#F5F3FF', border: '2px solid #EDE9FE' }}>
-              <span className="text-xl">🔒</span>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              background: C.soft, borderRadius: 14, padding: '14px 16px',
+              border: `1.5px solid ${C.divider}`,
+            }}>
+              <span style={{ fontSize: 18 }}>🔒</span>
               <input
                 type={showPin ? 'text' : 'password'}
                 placeholder="부모 PIN (4자리)"
-                className="flex-1 outline-none bg-transparent font-medium"
-                style={{ color: '#1F2937', fontSize: 15 }}
                 maxLength={4}
                 value={pin}
                 onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
                 onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                style={{
+                  flex: 1, border: 'none', background: 'transparent', outline: 'none',
+                  fontSize: 15, fontWeight: 600, color: C.t1, fontFamily: 'inherit',
+                }}
               />
-              <button onClick={() => setShowPin(!showPin)} className="text-xl">
+              <button onClick={() => setShowPin(v => !v)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 18 }}>
                 {showPin ? '🙈' : '👁️'}
               </button>
             </div>
           </div>
 
           {error && (
-            <div className="rounded-xl px-4 py-2.5 mb-4 text-center text-sm font-bold"
-              style={{ background: '#FEF2F2', color: '#EF4444' }}>
-              {error}
-            </div>
+            <div style={{
+              background: '#FEF2F2', color: '#DC2626', borderRadius: 12,
+              padding: '10px 14px', fontSize: 13, fontWeight: 700,
+              textAlign: 'center', marginBottom: 12,
+            }}>{error}</div>
           )}
 
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full py-4 rounded-2xl text-white font-black text-base shadow-lg active:scale-95 transition-all"
-            style={{ background: loading ? '#C4B5FD' : 'linear-gradient(135deg, #6D28D9 0%, #4F46E5 100%)', fontSize: 16 }}>
-            {loading ? '🔄  확인 중...' : '로그인 →'}
+            style={{
+              width: '100%', height: 54, border: 'none', borderRadius: 16,
+              background: loading ? C.soft : C.accent,
+              color: loading ? C.t3 : '#fff',
+              fontSize: 16, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: loading ? 'none' : SH.btn,
+              transition: 'all .15s', fontFamily: 'inherit',
+            }}
+          >
+            {loading ? '확인 중...' : '시작하기 →'}
           </button>
 
-          <p className="text-center text-sm mt-5" style={{ color: '#9CA3AF' }}>
+          <p style={{ textAlign: 'center', fontSize: 13, color: C.t3, margin: '16px 0 0', fontWeight: 600 }}>
             처음이신가요?{' '}
-            <Link to="/register" className="font-black" style={{ color: '#6D28D9' }}>계정 만들기</Link>
+            <Link to="/register" style={{ color: C.accent, fontWeight: 800, textDecoration: 'none' }}>계정 만들기</Link>
           </p>
         </div>
       </div>

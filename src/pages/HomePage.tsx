@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import ScreenHeader from '../components/ScreenHeader';
 import BottomNav from '../components/BottomNav';
 import PinModal from '../components/PinModal';
 import StampAnimation from '../components/StampAnimation';
 import { StampType } from '../types';
+import { C, SH } from '../lib/design';
 
 const STAMP_TYPES: { type: StampType; label: string; color: string; bg: string; emoji: string }[] = [
   { type: 'good',    label: 'GOOD!',    color: '#EF4444', bg: '#FEF2F2', emoji: '⭐' },
@@ -17,193 +19,193 @@ const STAMP_TYPES: { type: StampType; label: string; color: string; bg: string; 
 export default function HomePage() {
   const { currentUser, currentChild, getTodayMissions, completeMission, giveStamp } = useApp();
   const navigate = useNavigate();
-  const [missionPinTarget, setMissionPinTarget] = useState<string | null>(null);
-  const [showStampPin, setShowStampPin] = useState(false);
+  const [pending, setPending] = useState<Set<string>>(new Set());
+  const [showPin, setShowPin] = useState(false);
   const [showStampPicker, setShowStampPicker] = useState(false);
   const [stampAnim, setStampAnim] = useState<StampType | null>(null);
 
   if (!currentUser || !currentChild) return null;
 
   const missions = getTodayMissions();
-  const completedCount = missions.filter(m => m.completed >= m.target).length;
-  const recentStamps = [...currentChild.stamps].reverse().slice(0, 9);
+  const doneCount = missions.filter(m => m.completed >= m.target).length;
+  const allDone = doneCount === missions.length && missions.length > 0;
+
+  const toggleMission = (id: string) => {
+    const m = missions.find(m => m.id === id);
+    if (!m || m.completed >= m.target) return;
+    setPending(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleApprove = () => {
+    pending.forEach(id => completeMission(id));
+    setPending(new Set());
+    setShowPin(false);
+    setShowStampPicker(true);
+  };
+
+  const subtitle =
+    allDone      ? `오늘 미션을 모두 완료했어요! 🎉` :
+    pending.size > 0 ? `${pending.size}개 완료했어요. 도장 받으러 갈까요?` :
+                       '오늘은 무엇부터 시작해볼까요?';
 
   return (
-    <div className="min-h-screen flex flex-col pb-24" style={{ background: '#F5F3FF' }}>
+    <div className="fade-in" style={{ minHeight: '100vh', paddingBottom: 120, background: C.bg }}>
+      <ScreenHeader kidName={currentChild.name} streak={currentChild.streak} stars={currentChild.stars} showSettings />
 
-      {/* 헤더 */}
-      <div className="px-5 pt-6 pb-5" style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl flex items-center justify-center shadow-md text-3xl"
-              style={{ width: 52, height: 52, background: 'linear-gradient(135deg, #FDE68A, #F59E0B)', minWidth: 52 }}>
-              {currentChild.avatarEmoji}
-            </div>
-            <div>
-              <div className="font-black text-white text-lg leading-tight">{currentChild.name}</div>
-              {currentChild.streak > 0
-                ? <div className="text-yellow-300 text-xs font-bold mt-0.5">🔥 {currentChild.streak}일 연속 달성 중!</div>
-                : <div className="text-purple-200 text-xs mt-0.5">오늘도 파이팅! 💪</div>
-              }
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 rounded-2xl px-4 py-2.5 shadow-md"
-            style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
-            <span className="text-xl">⭐</span>
-            <span className="font-black text-white text-lg">{currentChild.stars}</span>
-          </div>
+      {/* Mascot hero */}
+      <div style={{ padding: '0 16px 4px' }}>
+        <div style={{ background: C.card, borderRadius: 24, padding: '20px 20px 14px', boxShadow: SH.card, textAlign: 'center' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '.08em', marginBottom: 8 }}>TODAY'S BUDDY</div>
+          <div className="float-anim" style={{ fontSize: 88, lineHeight: 1, marginBottom: 10 }}>🦕</div>
+          <div style={{ fontSize: 14, color: C.t2, fontWeight: 600, lineHeight: 1.5 }}>{subtitle}</div>
         </div>
       </div>
 
-      {/* 미션 카드 */}
-      <div className="px-4 pt-5">
-        <div className="rounded-3xl p-5 shadow-lg" style={{ background: 'white', border: '1px solid #EDE9FE' }}>
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <div className="font-black text-gray-900 text-base">오늘의 미션 📋</div>
-              <div className="text-xs mt-0.5" style={{ color: '#8B5CF6' }}>
-                {completedCount === missions.length && missions.length > 0
-                  ? '🎉 모두 완료했어요!'
-                  : `${completedCount}/${missions.length} 완료`
-                }
-              </div>
-            </div>
-            <div className="flex gap-1">
-              {missions.map((m, i) => (
-                <div key={i} className="w-2.5 h-2.5 rounded-full transition-all"
-                  style={{ background: m.completed >= m.target ? '#7C3AED' : '#EDE9FE' }} />
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2.5">
-            {missions.map(m => {
-              const done = m.completed >= m.target;
-              return (
-                <button key={m.id}
-                  onClick={() => !done && setMissionPinTarget(m.id)}
-                  className="rounded-2xl p-3 flex flex-col items-center active:scale-95 transition-all relative"
-                  style={{
-                    background: done ? 'linear-gradient(135deg, #6D28D9, #4F46E5)' : '#F5F3FF',
-                    border: done ? 'none' : '2px solid #EDE9FE',
-                    boxShadow: done ? '0 4px 12px rgba(109,40,217,0.3)' : 'none',
+      {/* Missions */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.t1, letterSpacing: '-.01em' }}>오늘의 미션</h2>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.t3 }}>
+            <span style={{ color: C.accent }}>{doneCount}</span> / {missions.length}
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {missions.map(m => {
+            const done     = m.completed >= m.target;
+            const selected = pending.has(m.id);
+            return (
+              <button
+                key={m.id}
+                onClick={() => toggleMission(m.id)}
+                style={{
+                  background:  done ? C.successSoft : selected ? C.accentSoft : C.card,
+                  border:      `2px solid ${done ? C.success : selected ? C.accent : 'transparent'}`,
+                  padding:     '18px 12px 14px',
+                  borderRadius: 20, cursor: done ? 'default' : 'pointer', textAlign: 'center',
+                  boxShadow:   !done && !selected ? SH.card : 'none',
+                  display:     'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  position:    'relative', transition: 'all .15s', fontFamily: 'inherit',
+                }}
+              >
+                {(done || selected) && (
+                  <div style={{
+                    position: 'absolute', top: 8, right: 8,
+                    width: 22, height: 22, borderRadius: 99,
+                    background: done ? C.success : C.accent,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                  <div className="text-3xl mb-1">{m.icon}</div>
-                  <div className="text-xs font-bold text-center leading-tight" style={{ color: done ? 'white' : '#6B7280' }}>{m.title}</div>
-                  {done && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center text-xs font-black" style={{ color: '#6D28D9' }}>✓</div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                    <svg width="11" height="11" viewBox="0 0 12 12">
+                      <path d="M2 6 L5 9 L10 3" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+                <div style={{ fontSize: 42 }}>{m.icon}</div>
+                <div style={{
+                  fontWeight: 700, fontSize: 14, color: C.t1,
+                  textDecoration: done ? 'line-through' : 'none',
+                  textDecorationColor: C.t3,
+                }}>{m.title}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* 스탬프북 미리보기 */}
-      <div className="px-4 pt-4">
-        <div className="rounded-3xl p-5 shadow-lg" style={{ background: 'white', border: '1px solid #EDE9FE' }}>
-          <div className="flex justify-between items-center mb-4">
-            <div className="font-black text-gray-900 text-base">나의 스탬프 📚</div>
-            <button onClick={() => navigate('/stampbook')} className="text-xs font-bold rounded-xl px-3 py-1.5" style={{ color: '#6D28D9', background: '#F5F3FF' }}>전체보기 →</button>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[...Array(9)].map((_, i) => {
-              const stamp = recentStamps[i];
-              const stype = STAMP_TYPES.find(s => s.type === stamp?.type);
-              return (
-                <div key={i} className="aspect-square rounded-2xl flex flex-col items-center justify-center"
-                  style={{
-                    background: stype ? stype.bg : '#F9F7FF',
-                    border: stype ? `2.5px solid ${stype.color}` : '2px dashed #DDD6FE',
-                  }}>
-                  {stype ? (
-                    <>
-                      <div style={{ fontSize: 26 }}>{stype.emoji}</div>
-                      <div className="font-black mt-0.5" style={{ color: stype.color, fontSize: 9 }}>{stype.label}</div>
-                    </>
-                  ) : (
-                    <div className="w-6 h-6 rounded-full" style={{ background: '#EDE9FE' }} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* 도장 요청 버튼 */}
-      <div className="px-4 pt-4">
+      {/* CTA */}
+      <div style={{ padding: '14px 16px 0' }}>
         <button
-          onClick={() => setShowStampPin(true)}
-          className="w-full rounded-3xl p-5 flex items-center gap-4 shadow-lg active:scale-95 transition-all"
-          style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}>
-          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-md">📦</div>
-          <div className="flex-1 text-left">
-            <div className="font-black text-amber-900 text-base">도장 요청하기</div>
-            <div className="text-amber-700 text-xs mt-0.5">부모님께 도장을 받아보세요!</div>
-          </div>
-          <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center" style={{ opacity: 0.8 }}>
-            <span className="font-black text-amber-700">→</span>
-          </div>
+          disabled={pending.size === 0}
+          onClick={() => setShowPin(true)}
+          style={{
+            width: '100%', height: 58, border: 'none', borderRadius: 18,
+            cursor: pending.size === 0 ? 'not-allowed' : 'pointer',
+            background: pending.size === 0 ? C.soft : C.accent,
+            color: pending.size === 0 ? C.t3 : '#fff',
+            fontSize: 16, fontWeight: 800,
+            boxShadow: pending.size === 0 ? 'none' : SH.btn,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            transition: 'all .15s', fontFamily: 'inherit',
+          }}
+        >
+          도장 요청하기
+          {pending.size > 0 && (
+            <span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: 99, fontSize: 13, padding: '2px 10px', fontWeight: 800 }}>
+              {pending.size}
+            </span>
+          )}
         </button>
       </div>
 
-      {/* 부모 모드 버튼 */}
-      <div className="px-4 pt-3">
+      {/* Stamp book link */}
+      <div style={{ padding: '10px 16px 0' }}>
         <button
-          onClick={() => navigate('/parent')}
-          className="w-full rounded-2xl px-5 py-4 flex items-center gap-3 active:scale-95 transition-all"
-          style={{ background: 'white', border: '1.5px solid #EDE9FE', boxShadow: '0 2px 8px rgba(109,40,217,0.06)' }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl" style={{ background: '#F5F3FF' }}>👨‍👩‍👧</div>
-          <span className="font-bold text-sm" style={{ color: '#4B5563' }}>부모 모드</span>
-          <span className="ml-auto font-bold" style={{ color: '#9CA3AF' }}>→</span>
+          onClick={() => navigate('/stampbook')}
+          style={{
+            width: '100%', background: C.card, border: 'none', borderRadius: 18,
+            padding: '14px 18px', cursor: 'pointer', fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', gap: 14, boxShadow: SH.card,
+          }}
+        >
+          <div style={{
+            width: 44, height: 44, borderRadius: 14, background: C.accentSoft,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 22, flexShrink: 0,
+          }}>📖</div>
+          <div style={{ flex: 1, textAlign: 'left' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.t1 }}>스탬프북</div>
+            <div style={{ fontSize: 12, color: C.t3, fontWeight: 600, marginTop: 2 }}>모은 스탬프 {currentChild.stamps.length}개</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18 L15 12 L9 6"/>
+          </svg>
         </button>
       </div>
 
-      {/* 모달 */}
-      {missionPinTarget && (
+      {/* PIN modal */}
+      {showPin && (
         <PinModal
-          title="미션 완료 확인" subtitle="부모님 PIN을 입력해주세요"
+          title="도장 요청"
+          subtitle={`${currentChild.name}이가 미션 ${pending.size}개를 완료했어요`}
           correctPin={currentUser.parentPin}
-          onSuccess={() => { completeMission(missionPinTarget!); setMissionPinTarget(null); }}
-          onClose={() => setMissionPinTarget(null)}
+          onSuccess={handleApprove}
+          onClose={() => setShowPin(false)}
         />
       )}
-      {showStampPin && (
-        <PinModal
-          title="도장 주기" subtitle="부모님 PIN을 입력해 도장을 주세요"
-          correctPin={currentUser.parentPin}
-          onSuccess={() => { setShowStampPin(false); setShowStampPicker(true); }}
-          onClose={() => setShowStampPin(false)}
-        />
-      )}
+
+      {/* Stamp picker */}
       {showStampPicker && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
-          onClick={() => setShowStampPicker(false)}>
-          <div className="w-full rounded-t-3xl p-6 pb-8 slide-up-anim"
-            style={{ background: 'white', maxWidth: 430 }}
-            onClick={e => e.stopPropagation()}>
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-            <h2 className="text-center font-black text-xl text-gray-900 mb-1">도장 선택 👑</h2>
-            <p className="text-center text-sm mb-5" style={{ color: '#6B7280' }}>{currentChild.name}에게 어떤 도장을 줄까요?</p>
-            <div className="grid grid-cols-5 gap-2">
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(31,26,20,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+          onClick={() => setShowStampPicker(false)}
+        >
+          <div
+            style={{ width: '100%', maxWidth: 430, background: C.card, borderRadius: '24px 24px 0 0', padding: '24px 20px 44px', animation: 'slide-up .3s ease' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: C.divider, margin: '0 auto 20px' }} />
+            <h3 style={{ textAlign: 'center', fontSize: 18, fontWeight: 800, color: C.t1, margin: '0 0 4px' }}>도장 선택하기</h3>
+            <p style={{ textAlign: 'center', fontSize: 13, color: C.t2, margin: '0 0 20px', fontWeight: 600 }}>{currentChild.name}에게 어떤 도장을 줄까요?</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
               {STAMP_TYPES.map(s => (
-                <button key={s.type}
+                <button
+                  key={s.type}
                   onClick={() => { setShowStampPicker(false); giveStamp(currentChild.id, s.type); setStampAnim(s.type); }}
-                  className="flex flex-col items-center gap-1 p-3 rounded-2xl active:scale-90 transition-transform"
-                  style={{ background: s.bg, border: `2.5px solid ${s.color}` }}>
-                  <div style={{ fontSize: 26 }}>{s.emoji}</div>
-                  <div className="font-black text-center" style={{ color: s.color, fontSize: 9 }}>{s.label}</div>
+                  style={{ background: s.bg, border: `2.5px solid ${s.color}`, borderRadius: 18, padding: '12px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  <span style={{ fontSize: 26 }}>{s.emoji}</span>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: s.color }}>{s.label}</span>
                 </button>
               ))}
             </div>
           </div>
         </div>
       )}
-      {stampAnim && (
-        <StampAnimation stampType={stampAnim} childName={currentChild.name} onComplete={() => setStampAnim(null)} />
-      )}
 
+      {stampAnim && <StampAnimation stampType={stampAnim} childName={currentChild.name} onComplete={() => setStampAnim(null)} />}
       <BottomNav active="home" />
     </div>
   );

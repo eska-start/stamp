@@ -1,81 +1,110 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { C, SH } from '../lib/design';
 
 interface Props {
-  title: string;
-  subtitle: string;
+  title:      string;
+  subtitle:   string;
   correctPin: string;
-  onSuccess: () => void;
-  onClose: () => void;
+  onSuccess:  () => void;
+  onClose:    () => void;
 }
 
 export default function PinModal({ title, subtitle, correctPin, onSuccess, onClose }: Props) {
-  const [pin, setPin] = useState(['', '', '', '']);
-  const [error, setError] = useState(false);
-  const [shaking, setShaking] = useState(false);
-  const refs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
+  const [pin, setPin] = useState('');
+  const [shake, setShake] = useState(false);
+  const [ok, setOk] = useState(false);
 
-  useEffect(() => { refs[0].current?.focus(); }, []);
-
-  const handleChange = (idx: number, val: string) => {
-    if (!/^\d?$/.test(val)) return;
-    const next = [...pin];
-    next[idx] = val;
-    setPin(next);
-    setError(false);
-    if (val && idx < 3) refs[idx + 1].current?.focus();
-    if (idx === 3 && val) {
-      const entered = [...next.slice(0, 3), val].join('');
-      if (entered === correctPin) {
-        onSuccess();
-      } else {
-        setError(true);
-        setShaking(true);
-        setTimeout(() => {
-          setShaking(false);
-          setPin(['', '', '', '']);
-          refs[0].current?.focus();
-        }, 600);
-      }
+  useEffect(() => {
+    if (pin.length !== 4) return;
+    if (pin === correctPin) {
+      setOk(true);
+      setTimeout(onSuccess, 500);
+    } else {
+      setShake(true);
+      setTimeout(() => { setShake(false); setPin(''); }, 500);
     }
-  };
+  }, [pin]);
 
-  const handleKeyDown = (idx: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !pin[idx] && idx > 0) refs[idx - 1].current?.focus();
-  };
+  const press = (n: string) => { if (pin.length < 4 && !ok) setPin(p => p + n); };
+  const back  = () => setPin(p => p.slice(0, -1));
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-6" onClick={onClose}>
-      <div
-        className="bg-white rounded-3xl p-6 w-full shadow-2xl bounce-in-anim"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="text-center mb-6">
-          <div className="text-5xl mb-3">🔐</div>
-          <h2 className="font-black text-gray-800 text-xl">{title}</h2>
-          <p className="text-gray-500 text-sm mt-1">{subtitle}</p>
+    <div style={{
+      position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+      width: '100%', maxWidth: 430, height: '100%', zIndex: 50,
+      background: C.bg, display: 'flex', flexDirection: 'column',
+      animation: 'fade-in .2s',
+    }}>
+      {/* back */}
+      <div style={{ padding: '54px 20px 0' }}>
+        <button onClick={onClose} style={{
+          width: 36, height: 36, borderRadius: 12, border: 'none',
+          background: C.card, cursor: 'pointer', boxShadow: SH.card,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 14 14">
+            <path d="M10 2 L4 7 L10 12" stroke={C.t2} strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '28px 28px 48px' }}>
+        {/* header */}
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, letterSpacing: '.08em', marginBottom: 6 }}>PARENT</div>
+          <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: C.t1 }}>{title}</h1>
+          <div style={{ fontSize: 14, color: C.t2, fontWeight: 600, lineHeight: 1.5 }}>{subtitle}</div>
         </div>
-        <div className={`flex justify-center gap-3 mb-4 ${shaking ? 'shake-anim' : ''}`}>
-          {pin.map((digit, i) => (
-            <input
-              key={i}
-              ref={refs[i]}
-              type="password"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={e => handleChange(i, e.target.value)}
-              onKeyDown={e => handleKeyDown(i, e)}
-              className="w-14 h-14 text-center text-2xl font-black rounded-2xl border-2 outline-none transition-all"
-              style={{
-                borderColor: error ? '#FF6B6B' : digit ? '#9B7FD4' : '#E0E0E0',
-                background: digit ? '#F0E8FF' : '#F8F8F8',
-              }}
-            />
+
+        {/* dots */}
+        <div style={{
+          display: 'flex', gap: 14, justifyContent: 'center',
+          animation: shake ? 'wiggle .45s' : 'none',
+        }}>
+          {[0,1,2,3].map(i => (
+            <div key={i} style={{
+              width: 16, height: 16, borderRadius: 99, transition: 'all .15s',
+              background: ok ? C.success : pin.length > i ? C.accent : 'transparent',
+              border: (pin.length > i || ok) ? '2px solid transparent' : `2px solid ${C.divider}`,
+            }}/>
           ))}
         </div>
-        {error && <p className="text-red-500 text-sm text-center mb-3">PIN이 올바르지 않습니다</p>}
-        <button onClick={onClose} className="w-full py-3 rounded-2xl bg-gray-100 text-gray-600 font-bold">취소</button>
+
+        {/* keypad */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {[1,2,3,4,5,6,7,8,9].map(n => (
+            <Key key={n} onTap={() => press(String(n))}>{n}</Key>
+          ))}
+          <div/>
+          <Key onTap={() => press('0')}>0</Key>
+          <Key onTap={back} ghost>
+            <svg width="22" height="18" viewBox="0 0 24 20">
+              <path d="M9 2 H22 a2 2 0 0 1 2 2 V16 a2 2 0 0 1 -2 2 H9 L2 10 z" fill="none" stroke={C.t2} strokeWidth="1.8" strokeLinejoin="round"/>
+              <path d="M13 7 L19 13 M19 7 L13 13" stroke={C.t2} strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </Key>
+        </div>
       </div>
     </div>
+  );
+}
+
+function Key({ children, onTap, ghost }: { children: React.ReactNode; onTap: () => void; ghost?: boolean }) {
+  const [down, setDown] = useState(false);
+  return (
+    <button
+      onClick={onTap}
+      onPointerDown={() => setDown(true)}
+      onPointerUp={() => setDown(false)}
+      onPointerLeave={() => setDown(false)}
+      style={{
+        height: 62, border: 'none', borderRadius: 16, cursor: 'pointer', fontFamily: 'inherit',
+        background: ghost ? 'transparent' : down ? '#EDE9E0' : C.card,
+        fontSize: 24, fontWeight: 600, color: C.t1,
+        boxShadow: ghost ? 'none' : down ? 'none' : '0 1px 2px rgba(31,26,20,0.04), 0 4px 14px rgba(31,26,20,0.05)',
+        transition: 'all .1s',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >{children}</button>
   );
 }
