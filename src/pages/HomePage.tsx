@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import ScreenHeader from '../components/ScreenHeader';
-import BottomNav from '../components/BottomNav';
 import PinModal from '../components/PinModal';
 import StampAnimation from '../components/StampAnimation';
 import { StampType } from '../types';
@@ -29,7 +28,6 @@ export default function HomePage() {
   const missions = getTodayMissions();
   const doneCount = missions.filter(m => m.completed >= m.target).length;
   const allDone = doneCount === missions.length && missions.length > 0;
-  const hasBlockingOverlay = showPin || showStampPicker || !!stampAnim;
 
   const toggleMission = (id: string) => {
     const m = missions.find(m => m.id === id);
@@ -111,29 +109,14 @@ export default function HomePage() {
       </div>
 
       <div style={{ padding: '14px 16px 0' }}>
-        <button
-          disabled={pending.size === 0}
-          onClick={() => setShowPin(true)}
-          style={{
-            width: '100%', height: 58, border: 'none', borderRadius: 18,
-            cursor: pending.size === 0 ? 'not-allowed' : 'pointer',
-            background: pending.size === 0 ? C.soft : C.accent,
-            color: pending.size === 0 ? C.t3 : '#fff', fontSize: 16, fontWeight: 800,
-            boxShadow: pending.size === 0 ? 'none' : SH.btn,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            transition: 'all .15s', fontFamily: 'inherit',
-          }}
-        >
+        <button disabled={pending.size === 0} onClick={() => setShowPin(true)} style={{ width: '100%', height: 58, border: 'none', borderRadius: 18, cursor: pending.size === 0 ? 'not-allowed' : 'pointer', background: pending.size === 0 ? C.soft : C.accent, color: pending.size === 0 ? C.t3 : '#fff', fontSize: 16, fontWeight: 800, boxShadow: pending.size === 0 ? 'none' : SH.btn, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all .15s', fontFamily: 'inherit' }}>
           도장 요청하기
           {pending.size > 0 && <span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: 99, fontSize: 13, padding: '2px 10px', fontWeight: 800 }}>{pending.size}</span>}
         </button>
       </div>
 
       <div style={{ padding: '10px 16px 0' }}>
-        <button
-          onClick={() => navigate('/stampbook')}
-          style={{ width: '100%', background: C.card, border: 'none', borderRadius: 18, padding: '14px 18px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 14, boxShadow: SH.card }}
-        >
+        <button onClick={() => navigate('/stampbook')} style={{ width: '100%', background: C.card, border: 'none', borderRadius: 18, padding: '14px 18px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 14, boxShadow: SH.card }}>
           <div style={{ width: 44, height: 44, borderRadius: 14, background: C.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📖</div>
           <div style={{ flex: 1, textAlign: 'left' }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.t1 }}>스탬프북</div>
@@ -143,35 +126,17 @@ export default function HomePage() {
         </button>
       </div>
 
-      {showPin && (
-        <PinModal
-          title="도장 요청"
-          subtitle={`${currentChild.name}이가 미션 ${pending.size}개를 완료했어요`}
-          correctPin={currentUser.parentPin}
-          onSuccess={handleApprove}
-          onClose={() => setShowPin(false)}
-        />
-      )}
+      {showPin && <PinModal title="도장 요청" subtitle={`${currentChild.name}이가 미션 ${pending.size}개를 완료했어요`} correctPin={currentUser.parentPin} onSuccess={handleApprove} onClose={() => setShowPin(false)} />}
 
       {showStampPicker && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(31,26,20,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
-          onClick={() => setShowStampPicker(false)}
-        >
-          <div
-            style={{ width: '100%', maxWidth: 430, background: C.card, borderRadius: '24px 24px 0 0', padding: '24px 20px 44px', animation: 'slide-up .3s ease' }}
-            onClick={e => e.stopPropagation()}
-          >
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(31,26,20,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowStampPicker(false)}>
+          <div style={{ width: '100%', maxWidth: 430, background: C.card, borderRadius: '24px 24px 0 0', padding: '24px 20px 44px', animation: 'slide-up .3s ease' }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, borderRadius: 99, background: C.divider, margin: '0 auto 20px' }} />
             <h3 style={{ textAlign: 'center', fontSize: 18, fontWeight: 800, color: C.t1, margin: '0 0 4px' }}>도장 선택하기</h3>
             <p style={{ textAlign: 'center', fontSize: 13, color: C.t2, margin: '0 0 20px', fontWeight: 600 }}>{currentChild.name}에게 어떤 도장을 줄까요?</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
               {STAMP_TYPES.map(s => (
-                <button
-                  key={s.type}
-                  onClick={() => { setShowStampPicker(false); giveStamp(currentChild.id, s.type); setStampAnim(s.type); }}
-                  style={{ background: s.bg, border: `2.5px solid ${s.color}`, borderRadius: 18, padding: '12px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
+                <button key={s.type} onClick={() => { setShowStampPicker(false); giveStamp(currentChild.id, s.type); setStampAnim(s.type); }} style={{ background: s.bg, border: `2.5px solid ${s.color}`, borderRadius: 18, padding: '12px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer', fontFamily: 'inherit' }}>
                   <span style={{ fontSize: 26 }}>{s.emoji}</span>
                   <span style={{ fontSize: 9, fontWeight: 800, color: s.color }}>{s.label}</span>
                 </button>
@@ -182,7 +147,6 @@ export default function HomePage() {
       )}
 
       {stampAnim && <StampAnimation stampType={stampAnim} childName={currentChild.name} onComplete={() => setStampAnim(null)} />}
-      {!hasBlockingOverlay && <BottomNav active="home" />}
     </div>
   );
 }
