@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import PinModal from '../components/PinModal';
+import { C, SH } from '../lib/design';
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
@@ -12,17 +13,13 @@ export default function ParentDashboard() {
 
   if (!authed) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF8F0' }}>
-        <button onClick={() => navigate('/home')}
-          className="absolute top-6 left-6 text-purple-600 font-black text-lg">‹ 뒤로</button>
-        <PinModal
-          title="부모 모드"
-          subtitle="부모님 PIN을 입력해주세요"
-          correctPin={currentUser.parentPin}
-          onSuccess={() => setAuthed(true)}
-          onClose={() => navigate('/home')}
-        />
-      </div>
+      <PinModal
+        title="부모 모드"
+        subtitle="부모님 PIN을 입력해주세요"
+        correctPin={currentUser.parentPin}
+        onSuccess={() => setAuthed(true)}
+        onClose={() => navigate('/home')}
+      />
     );
   }
 
@@ -31,51 +28,59 @@ export default function ParentDashboard() {
     navigate('/');
   };
 
+  const menuItems = [
+    { icon: '📋', title: '미션 관리', subtitle: '오늘의 미션을 수정해요', path: '/parent/missions' },
+    { icon: '🎁', title: '보상 관리', subtitle: '보상 목록을 수정해요', path: '/parent/rewards' },
+  ];
+
   return (
-    <div className="min-h-screen" style={{ background: '#FFF8F0' }}>
-      <div className="px-4 py-4 flex items-center"
-        style={{ background: 'linear-gradient(135deg, #9B7FD4 0%, #6D4EC4 100%)' }}>
-        <button onClick={() => navigate('/home')} className="text-white text-2xl mr-3">‹</button>
-        <h1 className="text-white font-black text-xl flex-1 text-center">👨‍👩‍👧 부모 모드</h1>
-        <div className="w-7" />
+    <div style={{ minHeight: '100vh', background: C.bg }}>
+      {/* Header */}
+      <div style={{ background: C.soft, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button
+          onClick={() => navigate('/home')}
+          style={{ width: 36, height: 36, borderRadius: 12, background: C.card, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: SH.card, color: C.t1, fontSize: 20, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+          ‹
+        </button>
+        <h1 style={{ flex: 1, textAlign: 'center', fontWeight: 900, fontSize: 18, color: C.t1, margin: 0 }}>부모 모드</h1>
+        <div style={{ width: 36 }} />
       </div>
 
-      <div className="px-4 py-5 space-y-4">
+      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* Child card */}
         {currentChild && (
-          <div className="bg-white rounded-3xl p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-md"
-                style={{ background: 'linear-gradient(135deg, #FFE082 0%, #FFB300 100%)', fontSize: 32, minWidth: 56 }}>
-                {currentChild.avatarEmoji}
-              </div>
-              <div className="flex-1">
-                <div className="font-black text-gray-800 text-lg">{currentChild.name}</div>
-                <div className="text-gray-500 text-sm">⭐ {currentChild.stars}개 · 🎉 {currentChild.stamps.length}개 스탬프</div>
-                {currentChild.streak > 0 && (
-                  <div className="text-orange-500 text-xs font-bold">🔥 {currentChild.streak}일 연속</div>
-                )}
-              </div>
+          <div style={{ background: C.card, borderRadius: 20, padding: 16, boxShadow: SH.card, display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, flexShrink: 0, border: `2px solid ${C.accent}33` }}>
+              {currentChild.avatarEmoji}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 900, color: C.t1, fontSize: 17 }}>{currentChild.name}</div>
+              <div style={{ color: C.t2, fontSize: 13, marginTop: 2 }}>⭐ {currentChild.stars}개 · 🎉 {currentChild.stamps.length}개 스탬프</div>
+              {currentChild.streak > 0 && (
+                <div style={{ color: C.accent, fontSize: 12, fontWeight: 700, marginTop: 2 }}>🔥 {currentChild.streak}일 연속</div>
+              )}
             </div>
           </div>
         )}
 
+        {/* Section label */}
+        <div style={{ fontWeight: 900, color: C.t3, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase' }}>관리 메뉴</div>
+
         {/* Menu */}
-        <div className="space-y-3">
-          <h2 className="font-black text-gray-600 text-sm uppercase tracking-wide">관리 메뉴</h2>
-          {[
-            { icon: '📋', title: '미션 관리', subtitle: '오늘의 미션을 수정해요', path: '/parent/missions', color: '#EDE7F6' },
-            { icon: '🎁', title: '보상 관리', subtitle: '보상 목록을 수정해요', path: '/parent/rewards', color: '#FFFBF0' },
-          ].map(item => (
-            <button key={item.path} onClick={() => navigate(item.path)}
-              className="w-full rounded-3xl p-4 flex items-center gap-4 shadow-sm active:scale-95 transition-transform text-left"
-              style={{ background: item.color }}>
-              <div className="text-3xl">{item.icon}</div>
-              <div className="flex-1">
-                <div className="font-black text-gray-800">{item.title}</div>
-                <div className="text-gray-500 text-sm">{item.subtitle}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {menuItems.map(item => (
+            <button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              style={{ background: C.card, borderRadius: 20, padding: 16, display: 'flex', alignItems: 'center', gap: 14, boxShadow: SH.card, border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: C.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>
+                {item.icon}
               </div>
-              <span className="text-gray-400 text-lg">›</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 900, color: C.t1, fontSize: 15 }}>{item.title}</div>
+                <div style={{ color: C.t2, fontSize: 13, marginTop: 2 }}>{item.subtitle}</div>
+              </div>
+              <span style={{ color: C.t3, fontSize: 20, fontWeight: 300 }}>›</span>
             </button>
           ))}
         </div>
@@ -83,14 +88,14 @@ export default function ParentDashboard() {
         {/* Exchange history */}
         {currentUser.rewardExchanges.length > 0 && (
           <div>
-            <h2 className="font-black text-gray-600 text-sm uppercase tracking-wide mb-2">교환 내역</h2>
-            <div className="space-y-2">
+            <div style={{ fontWeight: 900, color: C.t3, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>교환 내역</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[...currentUser.rewardExchanges].reverse().slice(0, 5).map(ex => (
-                <div key={ex.id} className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm">
-                  <span className="text-xl">🎁</span>
-                  <div className="flex-1">
-                    <div className="font-bold text-gray-700 text-sm">{ex.rewardName}</div>
-                    <div className="text-gray-400 text-xs">{new Date(ex.exchangedAt).toLocaleDateString('ko-KR')}</div>
+                <div key={ex.id} style={{ background: C.card, borderRadius: 16, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: SH.card }}>
+                  <span style={{ fontSize: 22 }}>🎁</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: C.t1, fontSize: 14 }}>{ex.rewardName}</div>
+                    <div style={{ color: C.t3, fontSize: 12 }}>{new Date(ex.exchangedAt).toLocaleDateString('ko-KR')}</div>
                   </div>
                 </div>
               ))}
@@ -98,12 +103,11 @@ export default function ParentDashboard() {
           </div>
         )}
 
-        <div className="pt-2">
-          <button onClick={handleLogout}
-            className="w-full py-3.5 rounded-2xl font-bold text-red-500 bg-red-50 border border-red-200 active:scale-95 transition-transform">
-            🚪 로그아웃
-          </button>
-        </div>
+        <button
+          onClick={handleLogout}
+          style={{ width: '100%', padding: '14px 0', borderRadius: 16, fontWeight: 700, fontSize: 15, background: '#FFF1F1', color: '#E53535', border: '1.5px solid #FFD0D0', cursor: 'pointer' }}>
+          🚪 로그아웃
+        </button>
       </div>
     </div>
   );

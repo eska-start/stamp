@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import { C, SH } from '../lib/design';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -26,50 +27,107 @@ export default function RegisterPage() {
     navigate('/register/child');
   };
 
-  const fields = [
-    { label: '아이 이름 (ID)', placeholder: '로그인 시 사용할 이름', icon: '👨‍👩‍👧', value: username, onChange: setUsername, type: 'text', max: undefined as number | undefined },
-    { label: '부모 PIN (4자리)', placeholder: '숫자 4자리', icon: '🔒', value: pin, onChange: (v: string) => setPin(v.replace(/\D/g, '')), type: 'password', max: 4 },
-    { label: 'PIN 확인', placeholder: 'PIN을 다시 입력해주세요', icon: '🔑', value: pinConfirm, onChange: (v: string) => setPinConfirm(v.replace(/\D/g, '')), type: 'password', max: 4 },
-  ];
+  const inputStyle = {
+    flex: 1,
+    outline: 'none',
+    background: 'transparent',
+    border: 'none',
+    color: C.t1,
+    fontSize: 15,
+  };
+
+  const fieldWrapStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    background: C.soft,
+    borderRadius: 16,
+    padding: '14px 16px',
+    border: `1.5px solid ${C.divider}`,
+    gap: 10,
+  };
 
   return (
-    <div className="min-h-screen flex flex-col py-8 px-6"
-      style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFE8D0 100%)' }}>
-      <Link to="/" className="text-purple-600 font-black text-lg mb-8">‹ 뒤로</Link>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '32px 24px', background: C.bg }}>
+      <Link to="/" style={{ color: C.accent, fontWeight: 900, fontSize: 17, textDecoration: 'none', marginBottom: 28 }}>‹ 뒤로</Link>
 
-      <div className="text-center mb-8">
-        <div className="text-6xl mb-3 float-anim">📖</div>
-        <h1 className="text-3xl font-black text-purple-700">계정 만들기</h1>
-        <p className="text-gray-500 text-sm mt-2">스탬프북을 시작해요!</p>
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div className="float-anim" style={{ fontSize: 64, marginBottom: 12 }}>📖</div>
+        <h1 style={{ fontWeight: 900, fontSize: 28, color: C.t1, margin: 0 }}>계정 만들기</h1>
+        <p style={{ color: C.t2, fontSize: 14, marginTop: 8 }}>스탬프북을 시작해요!</p>
       </div>
 
-      <div className="space-y-4">
-        {fields.map(f => (
-          <div key={f.label}>
-            <label className="text-gray-600 font-bold text-sm mb-1 block">{f.label}</label>
-            <div className="flex items-center bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-gray-100">
-              <span className="text-gray-400 mr-3">{f.icon}</span>
-              <input type={f.type} placeholder={f.placeholder}
-                className="flex-1 outline-none text-gray-700 bg-transparent"
-                maxLength={f.max} value={f.value}
-                onChange={e => f.onChange(e.target.value)}
-              />
-            </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div>
+          <div style={{ fontWeight: 700, color: C.t2, fontSize: 13, marginBottom: 6 }}>아이 이름 (ID)</div>
+          <div style={fieldWrapStyle}>
+            <span style={{ fontSize: 18 }}>👨‍👩‍👧</span>
+            <input
+              type="text"
+              placeholder="로그인 시 사용할 이름"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              style={inputStyle}
+            />
           </div>
-        ))}
+        </div>
 
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        <div>
+          <div style={{ fontWeight: 700, color: C.t2, fontSize: 13, marginBottom: 6 }}>부모 PIN (4자리)</div>
+          <div style={fieldWrapStyle}>
+            <span style={{ fontSize: 18 }}>🔒</span>
+            <input
+              type="password"
+              placeholder="숫자 4자리"
+              maxLength={4}
+              value={pin}
+              onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
+              style={inputStyle}
+            />
+          </div>
+        </div>
 
-        <button onClick={handleRegister} disabled={loading}
-          className="w-full py-4 rounded-2xl text-white font-black text-lg shadow-lg mt-2 active:scale-95 transition-transform"
-          style={{ background: loading ? '#B0A0D4' : 'linear-gradient(135deg, #9B7FD4 0%, #6D4EC4 100%)' }}>
-          {loading ? '🔄 생성 중...' : '다음 단계 ›'}
+        <div>
+          <div style={{ fontWeight: 700, color: C.t2, fontSize: 13, marginBottom: 6 }}>PIN 확인</div>
+          <div style={fieldWrapStyle}>
+            <span style={{ fontSize: 18 }}>🔑</span>
+            <input
+              type="password"
+              placeholder="PIN을 다시 입력해주세요"
+              maxLength={4}
+              value={pinConfirm}
+              onChange={e => setPinConfirm(e.target.value.replace(/\D/g, ''))}
+              style={inputStyle}
+            />
+          </div>
+        </div>
+
+        {error && (
+          <div style={{ color: '#E53535', fontSize: 13, textAlign: 'center', padding: '6px 12px', background: '#FFF1F1', borderRadius: 10 }}>{error}</div>
+        )}
+
+        <button
+          onClick={handleRegister}
+          disabled={loading}
+          style={{
+            width: '100%',
+            padding: '16px 0',
+            borderRadius: 16,
+            fontWeight: 900,
+            fontSize: 17,
+            border: 'none',
+            cursor: loading ? 'default' : 'pointer',
+            background: loading ? C.divider : C.accent,
+            color: loading ? C.t3 : '#fff',
+            boxShadow: loading ? 'none' : SH.btn,
+            marginTop: 4,
+          }}>
+          {loading ? '🔄 생성 중...' : '다음 단계 →'}
         </button>
       </div>
 
-      <p className="text-gray-500 text-sm mt-5 text-center">
+      <p style={{ color: C.t2, fontSize: 14, textAlign: 'center', marginTop: 24 }}>
         이미 계정이 있으신가요?{' '}
-        <Link to="/" className="text-purple-600 font-black">로그인</Link>
+        <Link to="/" style={{ color: C.accent, fontWeight: 900, textDecoration: 'none' }}>로그인</Link>
       </p>
     </div>
   );
