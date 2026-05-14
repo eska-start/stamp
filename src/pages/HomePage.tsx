@@ -54,95 +54,93 @@ export default function HomePage() {
                        '오늘은 무엇부터 시작해볼까요?';
 
   return (
-    <div className="fade-in" style={{ height: '100dvh', background: C.bg, overflow: 'hidden', position: 'relative' }}>
-      <div style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 132 }}>
-        <ScreenHeader kidName={currentChild.name} streak={currentChild.streak} stars={currentChild.stars} showSettings />
+    <div className="fade-in" style={{ minHeight: '100vh', paddingBottom: 120, background: C.bg }}>
+      <ScreenHeader kidName={currentChild.name} streak={currentChild.streak} stars={currentChild.stars} showSettings />
 
-        <div style={{ padding: '0 16px 4px' }}>
-          <div style={{ background: C.card, borderRadius: 24, padding: '20px 20px 14px', boxShadow: SH.card, textAlign: 'center' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '.08em', marginBottom: 8 }}>TODAY'S BUDDY</div>
-            <div className="float-anim" style={{ fontSize: 88, lineHeight: 1, marginBottom: 10 }}>🦕</div>
-            <div style={{ fontSize: 14, color: C.t2, fontWeight: 600, lineHeight: 1.5 }}>{subtitle}</div>
+      <div style={{ padding: '0 16px 4px' }}>
+        <div style={{ background: C.card, borderRadius: 24, padding: '20px 20px 14px', boxShadow: SH.card, textAlign: 'center' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '.08em', marginBottom: 8 }}>TODAY'S BUDDY</div>
+          <div className="float-anim" style={{ fontSize: 88, lineHeight: 1, marginBottom: 10 }}>🦕</div>
+          <div style={{ fontSize: 14, color: C.t2, fontWeight: 600, lineHeight: 1.5 }}>{subtitle}</div>
+        </div>
+      </div>
+
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.t1, letterSpacing: '-.01em' }}>오늘의 미션</h2>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.t3 }}>
+            <span style={{ color: C.accent }}>{doneCount}</span> / {missions.length}
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {missions.map(m => {
+            const done     = m.completed >= m.target;
+            const selected = pending.has(m.id);
+            return (
+              <button
+                key={m.id}
+                onClick={() => toggleMission(m.id)}
+                style={{
+                  background:  done ? C.successSoft : selected ? C.accentSoft : C.card,
+                  border:      `2px solid ${done ? C.success : selected ? C.accent : 'transparent'}`,
+                  padding:     '18px 12px 14px',
+                  borderRadius: 20, cursor: done ? 'default' : 'pointer', textAlign: 'center',
+                  boxShadow:   !done && !selected ? SH.card : 'none',
+                  display:     'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  position:    'relative', transition: 'all .15s', fontFamily: 'inherit',
+                }}
+              >
+                {(done || selected) && (
+                  <div style={{
+                    position: 'absolute', top: 8, right: 8,
+                    width: 22, height: 22, borderRadius: 99,
+                    background: done ? C.success : C.accent,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 12 12">
+                      <path d="M2 6 L5 9 L10 3" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+                <div style={{ fontSize: 42 }}>{m.icon}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: C.t1, textDecoration: done ? 'line-through' : 'none', textDecorationColor: C.t3 }}>{m.title}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ padding: '14px 16px 0' }}>
+        <button
+          disabled={pending.size === 0}
+          onClick={() => setShowPin(true)}
+          style={{
+            width: '100%', height: 58, border: 'none', borderRadius: 18,
+            cursor: pending.size === 0 ? 'not-allowed' : 'pointer',
+            background: pending.size === 0 ? C.soft : C.accent,
+            color: pending.size === 0 ? C.t3 : '#fff', fontSize: 16, fontWeight: 800,
+            boxShadow: pending.size === 0 ? 'none' : SH.btn,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            transition: 'all .15s', fontFamily: 'inherit',
+          }}
+        >
+          도장 요청하기
+          {pending.size > 0 && <span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: 99, fontSize: 13, padding: '2px 10px', fontWeight: 800 }}>{pending.size}</span>}
+        </button>
+      </div>
+
+      <div style={{ padding: '10px 16px 0' }}>
+        <button
+          onClick={() => navigate('/stampbook')}
+          style={{ width: '100%', background: C.card, border: 'none', borderRadius: 18, padding: '14px 18px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 14, boxShadow: SH.card }}
+        >
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: C.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📖</div>
+          <div style={{ flex: 1, textAlign: 'left' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.t1 }}>스탬프북</div>
+            <div style={{ fontSize: 12, color: C.t3, fontWeight: 600, marginTop: 2 }}>모은 스탬프 {currentChild.stamps.length}개</div>
           </div>
-        </div>
-
-        <div style={{ padding: '16px 16px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.t1, letterSpacing: '-.01em' }}>오늘의 미션</h2>
-            <span style={{ fontSize: 13, fontWeight: 700, color: C.t3 }}>
-              <span style={{ color: C.accent }}>{doneCount}</span> / {missions.length}
-            </span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {missions.map(m => {
-              const done     = m.completed >= m.target;
-              const selected = pending.has(m.id);
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => toggleMission(m.id)}
-                  style={{
-                    background:  done ? C.successSoft : selected ? C.accentSoft : C.card,
-                    border:      `2px solid ${done ? C.success : selected ? C.accent : 'transparent'}`,
-                    padding:     '18px 12px 14px',
-                    borderRadius: 20, cursor: done ? 'default' : 'pointer', textAlign: 'center',
-                    boxShadow:   !done && !selected ? SH.card : 'none',
-                    display:     'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                    position:    'relative', transition: 'all .15s', fontFamily: 'inherit',
-                  }}
-                >
-                  {(done || selected) && (
-                    <div style={{
-                      position: 'absolute', top: 8, right: 8,
-                      width: 22, height: 22, borderRadius: 99,
-                      background: done ? C.success : C.accent,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <svg width="11" height="11" viewBox="0 0 12 12">
-                        <path d="M2 6 L5 9 L10 3" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                  )}
-                  <div style={{ fontSize: 42 }}>{m.icon}</div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: C.t1, textDecoration: done ? 'line-through' : 'none', textDecorationColor: C.t3 }}>{m.title}</div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div style={{ padding: '14px 16px 0' }}>
-          <button
-            disabled={pending.size === 0}
-            onClick={() => setShowPin(true)}
-            style={{
-              width: '100%', height: 58, border: 'none', borderRadius: 18,
-              cursor: pending.size === 0 ? 'not-allowed' : 'pointer',
-              background: pending.size === 0 ? C.soft : C.accent,
-              color: pending.size === 0 ? C.t3 : '#fff', fontSize: 16, fontWeight: 800,
-              boxShadow: pending.size === 0 ? 'none' : SH.btn,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              transition: 'all .15s', fontFamily: 'inherit',
-            }}
-          >
-            도장 요청하기
-            {pending.size > 0 && <span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: 99, fontSize: 13, padding: '2px 10px', fontWeight: 800 }}>{pending.size}</span>}
-          </button>
-        </div>
-
-        <div style={{ padding: '10px 16px 0' }}>
-          <button
-            onClick={() => navigate('/stampbook')}
-            style={{ width: '100%', background: C.card, border: 'none', borderRadius: 18, padding: '14px 18px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 14, boxShadow: SH.card }}
-          >
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: C.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📖</div>
-            <div style={{ flex: 1, textAlign: 'left' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: C.t1 }}>스탬프북</div>
-              <div style={{ fontSize: 12, color: C.t3, fontWeight: 600, marginTop: 2 }}>모은 스탬프 {currentChild.stamps.length}개</div>
-            </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18 L15 12 L9 6"/></svg>
-          </button>
-        </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.t3} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18 L15 12 L9 6"/></svg>
+        </button>
       </div>
 
       {showPin && (
@@ -161,7 +159,7 @@ export default function HomePage() {
           onClick={() => setShowStampPicker(false)}
         >
           <div
-            style={{ width: '100%', maxWidth: 430, background: C.card, borderRadius: '24px 24px 0 0', padding: '24px 20px max(44px, env(safe-area-inset-bottom))', animation: 'slide-up .3s ease' }}
+            style={{ width: '100%', maxWidth: 430, background: C.card, borderRadius: '24px 24px 0 0', padding: '24px 20px 44px', animation: 'slide-up .3s ease' }}
             onClick={e => e.stopPropagation()}
           >
             <div style={{ width: 36, height: 4, borderRadius: 99, background: C.divider, margin: '0 auto 20px' }} />
