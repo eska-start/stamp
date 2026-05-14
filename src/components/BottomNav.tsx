@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { C, SH } from '../lib/design';
+import { C } from '../lib/design';
 
 type Tab = 'home' | 'stampbook' | 'rewards';
 
@@ -42,16 +42,28 @@ export default function BottomNav({ active }: { active: Tab }) {
   const navigate = useNavigate();
   return (
     <div style={{
-      position: 'fixed', bottom: 0, zIndex: 40,
-      left: '50%', transform: 'translateX(-50%)',
-      width: '100%', maxWidth: 430,
-      paddingBottom: 24, paddingTop: 8,
-      background: 'linear-gradient(180deg, rgba(246,243,236,0) 0%, rgba(246,243,236,1) 36%)',
+      position: 'fixed',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 100,
+      width: '100%',
+      display: 'flex',
+      justifyContent: 'center',
+      padding: '8px 0 max(24px, env(safe-area-inset-bottom))',
+      pointerEvents: 'none',
+      background: 'linear-gradient(180deg, rgba(246,243,236,0) 0%, rgba(246,243,236,0.96) 38%, rgba(246,243,236,1) 100%)',
     }}>
       <div style={{
-        margin: '0 14px', background: C.card, borderRadius: 24, padding: 6,
+        width: 'calc(100% - 28px)',
+        maxWidth: 402,
+        background: C.card,
+        borderRadius: 24,
+        padding: 6,
         boxShadow: '0 4px 24px rgba(31,26,20,0.10), 0 1px 4px rgba(31,26,20,0.06)',
-        display: 'flex', gap: 4,
+        display: 'flex',
+        gap: 4,
+        pointerEvents: 'auto',
       }}>
         {ITEMS.map(({ key, label, Icon, path }) => {
           const on = active === key;
