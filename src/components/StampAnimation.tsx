@@ -64,7 +64,7 @@ export default function StampAnimation({ stampType, childName, onComplete }: Pro
         {phase === 'celebrate' && (
           <div className="text-center bounce-in-anim">
             <div className="text-white font-black text-3xl">🎉 획득!</div>
-            <div className="text-yellow-300 font-bold text-xl mt-1">{childName}(i)에게 ⭐ +1!</div>
+            <div className="text-yellow-300 font-bold text-xl mt-1">{childName}에게 ⭐ +1!</div>
           </div>
         )}
       </div>

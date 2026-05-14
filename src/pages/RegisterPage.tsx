@@ -17,27 +17,31 @@ export default function RegisterPage() {
     if (pin.length !== 4) { setError('PIN은 4자리 숫자여야 합니다.'); return; }
     if (pin !== pinConfirm) { setError('PIN이 일치하지 않습니다.'); return; }
     const users = getUsers();
-    if (users.find(u => u.username === username)) { setError('이미 사용 중인 이름입니다.'); return; }
-
+    if (users.find(u => u.username === username.trim())) {
+      setError('이미 사용 중인 이름입니다.');
+      return;
+    }
     const newUser: AppUser = {
-      id: Date.now().toString(), username: username.trim(),
-      password: pin, parentPin: pin,
-      children: [], missionTemplates: DEFAULT_MISSIONS,
-      rewards: DEFAULT_REWARDS, rewardExchanges: {}, dailyMissions: {},
-    } as unknown as AppUser;
-    (newUser as AppUser & { rewardExchanges: never[] }).rewardExchanges = [] as never[];
-
-    const finalUser: AppUser = {
-      id: Date.now().toString(), username: username.trim(),
-      password: pin, parentPin: pin,
-      children: [], missionTemplates: [...DEFAULT_MISSIONS],
-      rewards: [...DEFAULT_REWARDS], rewardExchanges: [], dailyMissions: {},
+      id: Date.now().toString(),
+      username: username.trim(),
+      password: pin,
+      parentPin: pin,
+      children: [],
+      missionTemplates: [...DEFAULT_MISSIONS],
+      rewards: [...DEFAULT_REWARDS],
+      rewardExchanges: [],
+      dailyMissions: {},
     };
-
-    saveUsers([...users, finalUser]);
-    setCurrentUserId(finalUser.id);
+    saveUsers([...users, newUser]);
+    setCurrentUserId(newUser.id);
     navigate('/register/child');
   };
+
+  const fields = [
+    { label: '엄마/아빠 이름 (ID)', placeholder: '로그인 시 사용할 이름', icon: '👨‍👩‍👧', value: username, setter: setUsername, type: 'text', max: undefined },
+    { label: '부모 PIN (4자리)', placeholder: '숫자 4자리', icon: '🔒', value: pin, setter: (v: string) => setPin(v.replace(/\D/g, '')), type: 'password', max: 4 },
+    { label: 'PIN 확인', placeholder: 'PIN을 다시 입력해주세요', icon: '🔑', value: pinConfirm, setter: (v: string) => setPinConfirm(v.replace(/\D/g, '')), type: 'password', max: 4 },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col py-8 px-6"
@@ -51,21 +55,18 @@ export default function RegisterPage() {
       </div>
 
       <div className="space-y-4">
-        {[
-          { label: '엄마/아빠 이름 (ID)', placeholder: '로그인 시 사용할 이름', icon: '👨‍👩‍👧', value: username, onChange: setUsername, type: 'text' },
-          { label: '부모 PIN (4자리)', placeholder: '숫자 4자리', icon: '🔒', value: pin, onChange: (v: string) => setPin(v.replace(/\D/g, '')), type: 'password', max: 4 },
-          { label: 'PIN 확인', placeholder: 'PIN을 다시 입력해주세요', icon: '🔑', value: pinConfirm, onChange: (v: string) => setPinConfirm(v.replace(/\D/g, '')), type: 'password', max: 4 },
-        ].map(field => (
-          <div key={field.label}>
-            <label className="text-gray-600 font-bold text-sm mb-1 block">{field.label}</label>
+        {fields.map(f => (
+          <div key={f.label}>
+            <label className="text-gray-600 font-bold text-sm mb-1 block">{f.label}</label>
             <div className="flex items-center bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-gray-100">
-              <span className="text-gray-400 mr-3">{field.icon}</span>
+              <span className="text-gray-400 mr-3">{f.icon}</span>
               <input
-                type={field.type} placeholder={field.placeholder}
+                type={f.type}
+                placeholder={f.placeholder}
                 className="flex-1 outline-none text-gray-700 bg-transparent"
-                maxLength={field.max}
-                value={field.value}
-                onChange={e => (field.onChange as (v: string) => void)(e.target.value)}
+                maxLength={f.max}
+                value={f.value}
+                onChange={e => f.setter(e.target.value)}
               />
             </div>
           </div>
