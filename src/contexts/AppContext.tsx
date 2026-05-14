@@ -30,6 +30,8 @@ interface AppContextType {
   currentUser: AppUser | null;
   currentChild: Child | null;
   isLoading: boolean;
+  isParentAuthed: boolean;
+  setParentAuthed: (value: boolean) => void;
   loginUser: (username: string, pin: string) => Promise<AppUser | null>;
   registerUser: (username: string, pin: string) => Promise<'success' | 'taken' | 'error'>;
   logoutUser: () => void;
@@ -49,6 +51,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentChild, setCurrentChild] = useState<Child | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isParentAuthed, setIsParentAuthed] = useState(false);
 
   useEffect(() => {
     const id = getCurrentUserId();
@@ -84,6 +87,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentUser(user);
     const child = childId ? user.children.find(c => c.id === childId) || null : null;
     setCurrentChild(child);
+    setIsParentAuthed(false);
     return user;
   };
 
@@ -107,6 +111,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentUserId(newUser.id);
     setCurrentUser(newUser);
     setCurrentChild(null);
+    setIsParentAuthed(false);
     return 'success';
   };
 
@@ -115,6 +120,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentChildId(null);
     setCurrentUser(null);
     setCurrentChild(null);
+    setIsParentAuthed(false);
+  };
+
+  const setParentAuthed = (value: boolean) => {
+    setIsParentAuthed(value);
   };
 
   const setActiveChild = (childId: string) => {
@@ -128,11 +138,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const getTodayMissions = (): Mission[] => {
     if (!currentUser) return [];
     const today = getTodayString();
-    const existing = currentUser.dailyMissions[today];
-    if (existing) return existing;
-    return currentUser.missionTemplates.map(t => ({
-      id: t.id, title: t.title, icon: t.icon, target: t.target, completed: 0, date: today,
-    }));
+    const existing = currentUser.dailyMissions[today] || [];
+
+    const synced = currentUser.missionTemplates.map(t => {
+      const found = existing.find(m => m.id === t.id);
+      return found
+        ? { ...found, title: t.title, icon: t.icon, target: t.target, date: today }
+        : { id: t.id, title: t.title, icon: t.icon, target: t.target, completed: 0, date: today };
+    });
+
+    return synced;
   };
 
   const completeMission = (missionId: string) => {
@@ -162,7 +177,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateMissionTemplates = (templates: DailyMissionTemplate[]) => {
     if (!currentUser) return;
-    applyUser({ ...currentUser, missionTemplates: templates });
+    const today = getTodayString();
+    const existing = currentUser.dailyMissions[today] || [];
+    const syncedTodayMissions = templates.map(t => {
+      const found = existing.find(m => m.id === t.id);
+      return found
+        ? { ...found, title: t.title, icon: t.icon, target: t.target, date: today }
+        : { id: t.id, title: t.title, icon: t.icon, target: t.target, completed: 0, date: today };
+    });
+
+    applyUser({
+      ...currentUser,
+      missionTemplates: templates,
+      dailyMissions: {
+        ...currentUser.dailyMissions,
+        [today]: syncedTodayMissions,
+      },
+    });
   };
 
   const updateRewards = (rewards: Reward[]) => {
@@ -196,7 +227,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      currentUser, currentChild, isLoading,
+      currentUser, currentChild, isLoading, isParentAuthed, setParentAuthed,
       loginUser, registerUser, logoutUser, setActiveChild,
       getTodayMissions, completeMission, giveStamp,
       updateMissionTemplates, updateRewards, exchangeReward, addChild,
