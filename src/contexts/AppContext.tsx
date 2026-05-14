@@ -1,34 +1,39 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AppUser, Child, Mission, DailyMissionTemplate, Reward, StampType, StampEntry, RewardExchange } from '../types';
 import {
-  getCurrentUser,
-  updateUser,
-  setCurrentUserId as storageSaveUserId,
-  setCurrentChildId as storageSaveChildId,
-  getCurrentChildId,
+  AppUser, Child, Mission, DailyMissionTemplate,
+  Reward, StampType, StampEntry, RewardExchange,
+} from '../types';
+import {
+  getCurrentUserId, setCurrentUserId,
+  getCurrentChildId, setCurrentChildId,
 } from '../utils/storage';
+import {
+  findUserByCredentials, getUserById,
+  checkUsernameAvailable, saveUser, syncUser,
+} from '../utils/firestore';
 import { getTodayString, getYesterdayString } from '../utils/dateUtils';
 
 export const DEFAULT_MISSIONS: DailyMissionTemplate[] = [
   { id: 'm1', title: '양치하기', icon: '🪷', target: 1 },
-  { id: 'm2', title: '책 읽기', icon: '📚', target: 1 },
+  { id: 'm2', title: '책 읽기',  icon: '📚', target: 1 },
   { id: 'm3', title: '정리하기', icon: '🧺', target: 1 },
 ];
 
 export const DEFAULT_REWARDS: Reward[] = [
-  { id: 'r1', name: '공룡 인형', description: '규여운 공룡 친구', cost: 20, emoji: '🦕', available: true },
-  { id: 'r2', name: '특별 노트', description: '반짝이는 스티커 노트', cost: 15, emoji: '📓', available: true },
-  { id: 'r3', name: '크레용 세트', description: '알록달록 12색 크레용', cost: 25, emoji: '🖍️', available: true },
-  { id: 'r4', name: '칭찬 스티커 팬', description: '다양한 칭찬 스티커', cost: 10, emoji: '⭐', available: true },
+  { id: 'r1', name: '공룡 인형',     description: '규여운 공룡 친구',     cost: 20, emoji: '🦕', available: true },
+  { id: 'r2', name: '특별 노트',     description: '반짝이는 스티커 노트', cost: 15, emoji: '📓', available: true },
+  { id: 'r3', name: '크레용 세트',  description: '알록달록 12색 크레용',   cost: 25, emoji: '🖍️', available: true },
+  { id: 'r4', name: '칭찬 스티커 팬', description: '다양한 칭찬 스티커',  cost: 10, emoji: '⭐', available: true },
 ];
 
 interface AppContextType {
   currentUser: AppUser | null;
   currentChild: Child | null;
-  loginUser: (id: string, childId?: string) => void;
+  isLoading: boolean;
+  loginUser: (username: string, pin: string) => Promise<AppUser | null>;
+  registerUser: (username: string, pin: string) => Promise<'success' | 'taken' | 'error'>;
   logoutUser: () => void;
   setActiveChild: (childId: string) => void;
-  refreshUser: () => void;
   getTodayMissions: () => Mission[];
   completeMission: (missionId: string) => void;
   giveStamp: (childId: string, stampType: StampType) => void;
@@ -43,45 +48,81 @@ const AppContext = createContext<AppContextType | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentChild, setCurrentChild] = useState<Child | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const refreshUser = () => {
-    const user = getCurrentUser();
+  useEffect(() => {
+    const id = getCurrentUserId();
+    if (!id) { setIsLoading(false); return; }
+    getUserById(id).then(user => {
+      if (user) {
+        setCurrentUser(user);
+        const childId = getCurrentChildId();
+        const child = childId ? user.children.find(c => c.id === childId) || null : null;
+        setCurrentChild(child);
+      } else {
+        setCurrentUserId(null);
+        setCurrentChildId(null);
+      }
+      setIsLoading(false);
+    });
+  }, []);
+
+  const applyUser = (user: AppUser, persist = true) => {
     setCurrentUser(user);
-    if (user) {
-      const childId = getCurrentChildId();
-      const child = childId ? user.children.find(c => c.id === childId) || null : null;
-      setCurrentChild(child);
-    } else {
-      setCurrentChild(null);
-    }
+    const childId = getCurrentChildId();
+    const child = childId ? user.children.find(c => c.id === childId) || null : null;
+    setCurrentChild(child);
+    if (persist) syncUser(user);
   };
 
-  useEffect(() => { refreshUser(); }, []);
+  const loginUser = async (username: string, pin: string): Promise<AppUser | null> => {
+    const user = await findUserByCredentials(username, pin);
+    if (!user) return null;
+    setCurrentUserId(user.id);
+    const childId = user.children[0]?.id || null;
+    if (childId) setCurrentChildId(childId);
+    setCurrentUser(user);
+    const child = childId ? user.children.find(c => c.id === childId) || null : null;
+    setCurrentChild(child);
+    return user;
+  };
 
-  const loginUser = (id: string, childId?: string) => {
-    storageSaveUserId(id);
-    if (childId) storageSaveChildId(childId);
-    refreshUser();
+  const registerUser = async (
+    username: string,
+    pin: string
+  ): Promise<'success' | 'taken' | 'error'> => {
+    const available = await checkUsernameAvailable(username);
+    if (!available) return 'taken';
+    const newUser: AppUser = {
+      id: Date.now().toString(),
+      username, password: pin, parentPin: pin,
+      children: [],
+      missionTemplates: [...DEFAULT_MISSIONS],
+      rewards: [...DEFAULT_REWARDS],
+      rewardExchanges: [],
+      dailyMissions: {},
+    };
+    const ok = await saveUser(newUser);
+    if (!ok) return 'error';
+    setCurrentUserId(newUser.id);
+    setCurrentUser(newUser);
+    setCurrentChild(null);
+    return 'success';
   };
 
   const logoutUser = () => {
-    storageSaveUserId(null);
-    storageSaveChildId(null);
+    setCurrentUserId(null);
+    setCurrentChildId(null);
     setCurrentUser(null);
     setCurrentChild(null);
   };
 
   const setActiveChild = (childId: string) => {
-    storageSaveChildId(childId);
-    refreshUser();
-  };
-
-  const persistUser = (user: AppUser) => {
-    updateUser(user);
-    setCurrentUser(user);
-    const childId = getCurrentChildId();
-    const child = childId ? user.children.find(c => c.id === childId) || null : null;
-    setCurrentChild(child);
+    setCurrentChildId(childId);
+    if (currentUser) {
+      const child = currentUser.children.find(c => c.id === childId) || null;
+      setCurrentChild(child);
+    }
   };
 
   const getTodayMissions = (): Mission[] => {
@@ -101,7 +142,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const updated = missions.map(m =>
       m.id === missionId && m.completed < m.target ? { ...m, completed: m.completed + 1 } : m
     );
-    persistUser({ ...currentUser, dailyMissions: { ...currentUser.dailyMissions, [today]: updated } });
+    applyUser({ ...currentUser, dailyMissions: { ...currentUser.dailyMissions, [today]: updated } });
   };
 
   const giveStamp = (childId: string, stampType: StampType) => {
@@ -111,21 +152,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const yesterday = getYesterdayString();
     const updatedChildren = currentUser.children.map(c => {
       if (c.id !== childId) return c;
-      const newStreak = c.lastCompletedDate === yesterday ? c.streak + 1 :
-        c.lastCompletedDate === today ? c.streak : 1;
+      const newStreak =
+        c.lastCompletedDate === yesterday ? c.streak + 1 :
+        c.lastCompletedDate === today    ? c.streak     : 1;
       return { ...c, stamps: [...c.stamps, stamp], stars: c.stars + 1, streak: newStreak, lastCompletedDate: today };
     });
-    persistUser({ ...currentUser, children: updatedChildren });
+    applyUser({ ...currentUser, children: updatedChildren });
   };
 
   const updateMissionTemplates = (templates: DailyMissionTemplate[]) => {
     if (!currentUser) return;
-    persistUser({ ...currentUser, missionTemplates: templates });
+    applyUser({ ...currentUser, missionTemplates: templates });
   };
 
   const updateRewards = (rewards: Reward[]) => {
     if (!currentUser) return;
-    persistUser({ ...currentUser, rewards });
+    applyUser({ ...currentUser, rewards });
   };
 
   const exchangeReward = (rewardId: string): RewardExchange | null => {
@@ -139,23 +181,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const updatedChildren = currentUser.children.map(c =>
       c.id === currentChild.id ? { ...c, stars: c.stars - reward.cost } : c
     );
-    persistUser({ ...currentUser, children: updatedChildren, rewardExchanges: [...currentUser.rewardExchanges, exchange] });
+    applyUser({ ...currentUser, children: updatedChildren, rewardExchanges: [...currentUser.rewardExchanges, exchange] });
     return exchange;
   };
 
   const addChild = (child: Child) => {
     if (!currentUser) return;
     const updated = { ...currentUser, children: [...currentUser.children, child] };
-    updateUser(updated);
-    setCurrentUser(updated);
-    storageSaveChildId(child.id);
+    setCurrentChildId(child.id);
     setCurrentChild(child);
+    setCurrentUser(updated);
+    syncUser(updated);
   };
 
   return (
     <AppContext.Provider value={{
-      currentUser, currentChild, loginUser, logoutUser, setActiveChild, refreshUser,
-      getTodayMissions, completeMission, giveStamp, updateMissionTemplates, updateRewards, exchangeReward, addChild,
+      currentUser, currentChild, isLoading,
+      loginUser, registerUser, logoutUser, setActiveChild,
+      getTodayMissions, completeMission, giveStamp,
+      updateMissionTemplates, updateRewards, exchangeReward, addChild,
     }}>
       {children}
     </AppContext.Provider>

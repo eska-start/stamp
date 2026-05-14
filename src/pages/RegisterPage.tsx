@@ -1,46 +1,35 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getUsers, saveUsers, setCurrentUserId } from '../utils/storage';
-import { AppUser } from '../types';
-import { DEFAULT_MISSIONS, DEFAULT_REWARDS } from '../contexts/AppContext';
+import { useApp } from '../contexts/AppContext';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { registerUser } = useApp();
   const navigate = useNavigate();
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     setError('');
-    if (!username.trim()) { setError('아이 이름을 입력해주세요.'); return; }
-    if (pin.length !== 4) { setError('PIN은 4자리 숫자여야 합니다.'); return; }
+    if (!username.trim())   { setError('아이 이름을 입력해주세요.'); return; }
+    if (pin.length !== 4)   { setError('PIN은 4자리 숫자여야 합니다.'); return; }
     if (pin !== pinConfirm) { setError('PIN이 일치하지 않습니다.'); return; }
-    const users = getUsers();
-    if (users.find(u => u.username === username.trim())) {
-      setError('이미 사용 중인 이름입니다.');
-      return;
-    }
-    const newUser: AppUser = {
-      id: Date.now().toString(),
-      username: username.trim(),
-      password: pin,
-      parentPin: pin,
-      children: [],
-      missionTemplates: [...DEFAULT_MISSIONS],
-      rewards: [...DEFAULT_REWARDS],
-      rewardExchanges: [],
-      dailyMissions: {},
-    };
-    saveUsers([...users, newUser]);
-    setCurrentUserId(newUser.id);
+
+    setLoading(true);
+    const result = await registerUser(username.trim(), pin);
+    setLoading(false);
+
+    if (result === 'taken')  { setError('이미 사용 중인 이름입니다.'); return; }
+    if (result === 'error')  { setError('오류가 발생했습니다. 다시 시도해주세요.'); return; }
     navigate('/register/child');
   };
 
   const fields = [
-    { label: '엄마/아빠 이름 (ID)', placeholder: '로그인 시 사용할 이름', icon: '👨‍👩‍👧', value: username, setter: setUsername, type: 'text', max: undefined },
-    { label: '부모 PIN (4자리)', placeholder: '숫자 4자리', icon: '🔒', value: pin, setter: (v: string) => setPin(v.replace(/\D/g, '')), type: 'password', max: 4 },
-    { label: 'PIN 확인', placeholder: 'PIN을 다시 입력해주세요', icon: '🔑', value: pinConfirm, setter: (v: string) => setPinConfirm(v.replace(/\D/g, '')), type: 'password', max: 4 },
+    { label: '아이 이름 (ID)', placeholder: '로그인 시 사용할 이름', icon: '👨‍👩‍👧', value: username, onChange: setUsername, type: 'text', max: undefined as number | undefined },
+    { label: '부모 PIN (4자리)', placeholder: '숫자 4자리', icon: '🔒', value: pin, onChange: (v: string) => setPin(v.replace(/\D/g, '')), type: 'password', max: 4 },
+    { label: 'PIN 확인', placeholder: 'PIN을 다시 입력해주세요', icon: '🔑', value: pinConfirm, onChange: (v: string) => setPinConfirm(v.replace(/\D/g, '')), type: 'password', max: 4 },
   ];
 
   return (
@@ -60,13 +49,10 @@ export default function RegisterPage() {
             <label className="text-gray-600 font-bold text-sm mb-1 block">{f.label}</label>
             <div className="flex items-center bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-gray-100">
               <span className="text-gray-400 mr-3">{f.icon}</span>
-              <input
-                type={f.type}
-                placeholder={f.placeholder}
+              <input type={f.type} placeholder={f.placeholder}
                 className="flex-1 outline-none text-gray-700 bg-transparent"
-                maxLength={f.max}
-                value={f.value}
-                onChange={e => f.setter(e.target.value)}
+                maxLength={f.max} value={f.value}
+                onChange={e => f.onChange(e.target.value)}
               />
             </div>
           </div>
@@ -74,10 +60,10 @@ export default function RegisterPage() {
 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-        <button onClick={handleRegister}
+        <button onClick={handleRegister} disabled={loading}
           className="w-full py-4 rounded-2xl text-white font-black text-lg shadow-lg mt-2 active:scale-95 transition-transform"
-          style={{ background: 'linear-gradient(135deg, #9B7FD4 0%, #6D4EC4 100%)' }}>
-          다음 단계 ›
+          style={{ background: loading ? '#B0A0D4' : 'linear-gradient(135deg, #9B7FD4 0%, #6D4EC4 100%)' }}>
+          {loading ? '🔄 생성 중...' : '다음 단계 ›'}
         </button>
       </div>
 

@@ -12,7 +12,17 @@ import MissionEditor from './pages/MissionEditor';
 import RewardEditor from './pages/RewardEditor';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useApp();
+  const { currentUser, isLoading } = useApp();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF8F0' }}>
+        <div className="text-center">
+          <div className="text-6xl mb-4 float-anim">🦕</div>
+          <div className="text-purple-600 font-black text-lg">로딩 중...</div>
+        </div>
+      </div>
+    );
+  }
   if (!currentUser) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
@@ -23,12 +33,12 @@ function AppRoutes() {
       <Route path="/" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/register/child" element={<ChildRegisterPage />} />
-      <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-      <Route path="/stampbook" element={<ProtectedRoute><StampBookPage /></ProtectedRoute>} />
-      <Route path="/rewards" element={<ProtectedRoute><RewardsPage /></ProtectedRoute>} />
-      <Route path="/parent" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
+      <Route path="/home"           element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+      <Route path="/stampbook"      element={<ProtectedRoute><StampBookPage /></ProtectedRoute>} />
+      <Route path="/rewards"        element={<ProtectedRoute><RewardsPage /></ProtectedRoute>} />
+      <Route path="/parent"         element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
       <Route path="/parent/missions" element={<ProtectedRoute><MissionEditor /></ProtectedRoute>} />
-      <Route path="/parent/rewards" element={<ProtectedRoute><RewardEditor /></ProtectedRoute>} />
+      <Route path="/parent/rewards"  element={<ProtectedRoute><RewardEditor /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
