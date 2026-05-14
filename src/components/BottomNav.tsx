@@ -50,7 +50,7 @@ export default function BottomNav({ active }: { active: Tab }) {
       width: '100%',
       display: 'flex',
       justifyContent: 'center',
-      padding: '8px 0 max(24px, env(safe-area-inset-bottom))',
+      padding: '8px 0 24px',
       pointerEvents: 'none',
       background: 'linear-gradient(180deg, rgba(246,243,236,0) 0%, rgba(246,243,236,0.96) 38%, rgba(246,243,236,1) 100%)',
     }}>
