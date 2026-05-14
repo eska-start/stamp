@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import PinModal from '../components/PinModal';
@@ -6,18 +6,17 @@ import { C, SH } from '../lib/design';
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
-  const { currentUser, currentChild, logoutUser } = useApp();
-  const [authed, setAuthed] = useState(false);
+  const { currentUser, currentChild, logoutUser, isParentAuthed, setParentAuthed } = useApp();
 
   if (!currentUser) return null;
 
-  if (!authed) {
+  if (!isParentAuthed) {
     return (
       <PinModal
         title="부모 모드"
         subtitle="부모님 PIN을 입력해주세요"
         correctPin={currentUser.parentPin}
-        onSuccess={() => setAuthed(true)}
+        onSuccess={() => setParentAuthed(true)}
         onClose={() => navigate('/home')}
       />
     );
@@ -35,7 +34,6 @@ export default function ParentDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg }}>
-      {/* Header */}
       <div style={{ background: C.soft, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <button
           onClick={() => navigate('/home')}
@@ -47,7 +45,6 @@ export default function ParentDashboard() {
       </div>
 
       <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Child card */}
         {currentChild && (
           <div style={{ background: C.card, borderRadius: 20, padding: 16, boxShadow: SH.card, display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, flexShrink: 0, border: `2px solid ${C.accent}33` }}>
@@ -63,10 +60,8 @@ export default function ParentDashboard() {
           </div>
         )}
 
-        {/* Section label */}
         <div style={{ fontWeight: 900, color: C.t3, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase' }}>관리 메뉴</div>
 
-        {/* Menu */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {menuItems.map(item => (
             <button
@@ -84,24 +79,6 @@ export default function ParentDashboard() {
             </button>
           ))}
         </div>
-
-        {/* Exchange history */}
-        {currentUser.rewardExchanges.length > 0 && (
-          <div>
-            <div style={{ fontWeight: 900, color: C.t3, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>교환 내역</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[...currentUser.rewardExchanges].reverse().slice(0, 5).map(ex => (
-                <div key={ex.id} style={{ background: C.card, borderRadius: 16, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: SH.card }}>
-                  <span style={{ fontSize: 22 }}>🎁</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, color: C.t1, fontSize: 14 }}>{ex.rewardName}</div>
-                    <div style={{ color: C.t3, fontSize: 12 }}>{new Date(ex.exchangedAt).toLocaleDateString('ko-KR')}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         <button
           onClick={handleLogout}
